@@ -41,9 +41,8 @@ const positions = [
   { position_id: 'p3', name: 'Бухгалтер' },
 ];
 const users = [
-  { user_id: 'u1', name: 'Акакий Акакиевич' },
-  { user_id: 'u2', name: 'Анна Новикова' },
-  { user_id: 'u3', name: 'Джарлакс Бэнр' },
+  { user_id: 'u1', name: 'Екатерина Смольников' },
+  { user_id: 'u2', name: 'Анна Курчатова' },
 ];
 
 // Types
@@ -87,8 +86,21 @@ const initialVacancies: Vacancy[] = [
     date_closed: '',
     created_by: 'u1',
     salary_range: '150 000 - 200 000 ₽',
-    location: 'Москва',
-    candidates: [],
+    location: 'Ижевск',
+    candidates: [
+      {
+        id: 'fb9d48df-3937-41a9-bf41-3611d0b73b9c',
+        name: 'Максим',
+        phone: '+79167438391',
+        email: 'persei1900@gmail.com',
+        work_experience: '5 лет',
+        status: 'viewed',
+        interview_date: '10.07.2025',
+        pdf: null,
+        pdfUrl: '',
+        plainText: 'Опыт работы с React, TypeScript, Redux, Material-UI.',
+      },
+    ],
   },
   {
     vacancy_id: uuidv4(),
@@ -99,9 +111,9 @@ const initialVacancies: Vacancy[] = [
     status: 'OPEN',
     date_opened: '2024-04-15',
     date_closed: '',
-    created_by: 'u2',
+    created_by: 'u1',
     salary_range: '80 000 - 120 000 ₽',
-    location: 'Санкт-Петербург',
+    location: 'Ижевск',
     candidates: [],
   },
   {
@@ -113,9 +125,9 @@ const initialVacancies: Vacancy[] = [
     status: 'ON_HOLD',
     date_opened: '2024-03-20',
     date_closed: '',
-    created_by: 'u3',
+    created_by: 'u2',
     salary_range: '100 000 - 140 000 ₽',
-    location: 'Екатеринбург',
+    location: 'Ижевск',
     candidates: [],
   },
 ];
@@ -151,7 +163,7 @@ export default function HiringPage() {
   // Candidate form state
   const [candidateForm, setCandidateForm] = React.useState<Candidate>({
     id: '',
-    name: '',
+    name: 'Максим',
     phone: '',
     email: '',
     work_experience: '',
@@ -164,6 +176,8 @@ export default function HiringPage() {
   const [candidateDialog, setCandidateDialog] = React.useState(false);
   const [pdfViewUrl, setPdfViewUrl] = React.useState('');
   const [aiAnalysisDialog, setAiAnalysisDialog] = React.useState(false);
+  const [selectedUser, setSelectedUser] = React.useState('');
+  const [selectedUserPdf, setSelectedUserPdf] = React.useState('');
 
   const handleChangePage = (_event: unknown, newPage: number) => setPage(newPage);
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,6 +255,7 @@ export default function HiringPage() {
   };
   const handleCandidatePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
+    console.log(file);
     if (file) {
       setCandidateForm((prev) => ({ ...prev, pdf: file, pdfUrl: URL.createObjectURL(file) }));
     }
@@ -260,8 +275,16 @@ export default function HiringPage() {
   // Tab change
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => setTab(newValue);
 
-  const handleOpenAiAnalysis = () => setAiAnalysisDialog(true);
-  const handleCloseAiAnalysis = () => setAiAnalysisDialog(false);
+  const handleOpenAiAnalysis = (userName: string, pdfUrl: string) => {
+    setAiAnalysisDialog(true);
+    selectUser(userName);
+  };
+  const handleCloseAiAnalysis = () => {
+    setAiAnalysisDialog(false);
+    selectUser('');
+  };
+
+  const selectUser = (username: string) => setSelectedUser(username);
 
   return (
     <Stack spacing={4} sx={{ mt: 4 }}>
@@ -295,7 +318,10 @@ export default function HiringPage() {
             </TableHead>
             <TableBody>
               {paginatedVacancies.map((vacancy, idx) => (
-                <TableRow key={vacancy.vacancy_id}>
+                <TableRow
+                  key={vacancy.vacancy_id}
+                  style={{ backgroundColor: vacancy.status == 'ON_HOLD' ? '#82807a26' : 'none' }}
+                >
                   <TableCell>{vacancy.vacancy_id}</TableCell>
                   <TableCell>{vacancy.title}</TableCell>
                   <TableCell>{departments.find((d) => d.dept_id === vacancy.dept_id)?.name || ''}</TableCell>
@@ -476,7 +502,7 @@ export default function HiringPage() {
                         </Button>
                       )}
 
-                      <Button size="small" onClick={handleOpenAiAnalysis}>
+                      <Button size="small" onClick={() => handleOpenAiAnalysis(cand.name, cand.pdfUrl)}>
                         AI-анализ
                       </Button>
                     </Stack>
@@ -589,31 +615,47 @@ export default function HiringPage() {
           <Button onClick={handleClosePdfView}>Закрыть</Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={aiAnalysisDialog} onClose={handleCloseAiAnalysis} maxWidth="sm" fullWidth>
-        <DialogTitle>AI-анализ кандидата</DialogTitle>
-        <DialogContent>
-          <Typography variant="subtitle1" gutterBottom>
-            Общий анализ — 89%
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            Оценка скилов — 70% соответствия вакансии
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            Коммуникативные навыки — 82%
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            <b>Сильные стороны:</b> большой опыт работы с необходимой технологией (TypeScript, React), знание библиотек
-            (Redux, Material-UI), написание высоконагруженных сервисов и баз данных.
-          </Typography>
-          <Typography variant="body2" gutterBottom>
-            <b>Слабые стороны:</b> нет высшего технического образования, частая смена компаний, нет упоминания работы с
-            библиотекой pg.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAiAnalysis}>Закрыть</Button>
-        </DialogActions>
-      </Dialog>
+      {selectedUser !== 'Максим' || !selectedUserPdf ? (
+        <Dialog open={aiAnalysisDialog} onClose={handleCloseAiAnalysis} maxWidth="sm" fullWidth>
+          <DialogTitle>AI-анализ кандидата</DialogTitle>
+          <DialogContent>
+            <Typography variant="subtitle1" gutterBottom>
+              {selectedUserPdf == ''
+                ? 'Отсутствует pdf файл. Загрузите его для использования AI функционала'
+                : 'Что-то пошло не так'}
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseAiAnalysis}>Закрыть</Button>
+          </DialogActions>
+        </Dialog>
+      ) : (
+        <Dialog open={aiAnalysisDialog} onClose={handleCloseAiAnalysis} maxWidth="sm" fullWidth>
+          <DialogTitle>AI-анализ кандидата</DialogTitle>
+          <DialogContent>
+            <Typography variant="subtitle1" gutterBottom>
+              Общий анализ — 89%
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              Оценка скилов — 70% соответствия вакансии
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              Коммуникативные навыки — 82%
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              <b>Сильные стороны:</b> большой опыт работы с необходимой технологией (TypeScript, React), знание
+              библиотек (Redux, Material-UI), написание высоконагруженных сервисов и баз данных.
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              <b>Слабые стороны:</b> нет высшего технического образования, частая смена компаний, нет упоминания работы
+              с библиотекой pg.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseAiAnalysis}>Закрыть</Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Stack>
   );
 }
